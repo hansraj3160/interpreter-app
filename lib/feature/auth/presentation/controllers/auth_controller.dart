@@ -10,8 +10,8 @@ class AuthController extends GetxController {
   final signupFormKey = GlobalKey<FormState>();
 
   // Text Controllers
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
+  final emailController = TextEditingController(text: "abc@gmail.com");
+  final passwordController = TextEditingController(text: "password123");
   final nameController = TextEditingController(); // For Signup
 
   // Observables for state management
@@ -33,15 +33,21 @@ class AuthController extends GetxController {
     isPasswordHidden.value = !isPasswordHidden.value;
   }
 
-  void login() async {
+ void login() async {
     if (loginFormKey.currentState!.validate()) {
       isLoading.value = true;
-      // TODO: API Call yahan aayegi Dio ke through
-      await Future.delayed(const Duration(seconds: 2)); // Simulating network req
+      await Future.delayed(const Duration(seconds: 2)); // Simulating API
       isLoading.value = false;
       
-      Get.snackbar('Success', 'Logged in successfully as ${role.capitalizeFirst}', snackPosition: SnackPosition.BOTTOM);
-      // Get.offAllNamed(Routes.HOME); // Aage chal kar Home par bhejenge
+      Get.snackbar('Success', 'Logged in successfully!', snackPosition: SnackPosition.BOTTOM);
+      
+      // Role ke hisaab se dashboard par navigate karein
+      if (role == 'client') {
+        Get.offAllNamed('/client-dashboard');
+      } else {
+        // Future mein interpreter dashboard yahan aayega
+        // Get.offAllNamed('/interpreter-dashboard'); 
+      }
     }
   }
 

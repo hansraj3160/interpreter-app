@@ -1,23 +1,36 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  // Light Theme Configuration
+  // Light Theme
   static final ThemeData lightTheme = ThemeData(
-    primarySwatch: Colors.blue,
+    useMaterial3: true,
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: const Color(0xFF1E88E5), // Primary Professional Blue
+      brightness: Brightness.light,
+    ),
     scaffoldBackgroundColor: Colors.white,
-    visualDensity: VisualDensity.adaptivePlatformDensity,
     appBarTheme: const AppBarTheme(
-      elevation: 0,
       centerTitle: true,
-      color: Colors.blue,
-      iconTheme: IconThemeData(color: Colors.white),
+      elevation: 0,
+      backgroundColor: Color(0xFF1E88E5),
+      foregroundColor: Colors.white,
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        minimumSize: const Size(double.infinity, 50),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
     ),
   );
 
-  // Dark Theme (Optional, future requirements ke liye)
+  // Dark Theme 
   static final ThemeData darkTheme = ThemeData(
-    brightness: Brightness.dark,
-    primarySwatch: Colors.blue,
-    visualDensity: VisualDensity.adaptivePlatformDensity,
+    useMaterial3: true,
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: const Color(0xFF1E88E5),
+      brightness: Brightness.dark,
+    ),
   );
 }

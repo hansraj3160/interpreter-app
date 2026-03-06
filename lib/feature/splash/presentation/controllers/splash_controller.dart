@@ -1,23 +1,16 @@
 import 'package:get/get.dart';
+import '../../../../routes/app_pages.dart'; // Routes import karein
 
 class SplashController extends GetxController {
   @override
-  void onInit() {
-    super.onInit();
-    _startApp();
+  void onReady() {
+    super.onReady();
+    _initApp();
   }
 
-  void _startApp() async {
-    // Yahan aage chalkar hum Authentication Token check karenge
+  void _initApp() async {
     await Future.delayed(const Duration(seconds: 3));
-    
-    // Auth check ke baad next screen par navigate karein:
-    // if (isLoggedIn) {
-    //   Get.offAllNamed(Routes.DASHBOARD);
-    // } else {
-    //   Get.offAllNamed(Routes.LOGIN);
-    // }
-    
-    print("Navigation triggered: Move to Login or Home");
+    // Splash ke baad Welcome screen par le jayein
+    Get.offAllNamed(Routes.WELCOME); 
   }
 }

@@ -3,17 +3,14 @@ import 'package:get/get.dart';
 import 'core/theme/app_theme.dart';
 import 'routes/app_pages.dart';
 
-void main() async {
-  // Ensure widgets binding is initialized before any async operations
+void main() {
+  // Yeh line async operations (jaise SharedPreferences ya Firebase) ke liye zaroori hai
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Example: Initialize Flutter Secure Storage or Shared Preferences here
-  
-  runApp(const InterpreterApp());
+  runApp(const MyApp());
 }
 
-class InterpreterApp extends StatelessWidget {
-  const InterpreterApp({Key? key}) : super(key: key);
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -21,11 +18,10 @@ class InterpreterApp extends StatelessWidget {
       title: 'Interpreter Booking System',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system, // Device ki theme ko follow karega
+      themeMode: ThemeMode.system, // Device theme (Light/Dark) ko follow karega
       initialRoute: AppPages.INITIAL,
       getPages: AppPages.routes,
       debugShowCheckedModeBanner: false,
-      defaultTransition: Transition.fade, // App-wide route transition
     );
   }
 }

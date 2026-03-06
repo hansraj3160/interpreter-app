@@ -6,6 +6,7 @@ class ClientDashboardController extends GetxController {
 
   // Search input state
   final RxString searchQuery = ''.obs;
+  final RxString selectedLanguage = ''.obs;
 
   // Dummy list of languages for quick filters
   final List<String> languages = ['Spanish', 'ASL (Sign)', 'French', 'Mandarin', 'Arabic', 'German'];

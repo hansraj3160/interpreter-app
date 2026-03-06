@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:interpreter_app/routes/app_pages.dart';
 
 class AuthController extends GetxController {
   // Role aayega Welcome screen se
@@ -43,7 +44,7 @@ class AuthController extends GetxController {
       
       // Role ke hisaab se dashboard par navigate karein
       if (role == 'client') {
-        Get.offAllNamed('/client-dashboard');
+      Get.offAllNamed(Routes.CLIENT_DASHBOARD);
       } else {
         // Future mein interpreter dashboard yahan aayega
         // Get.offAllNamed('/interpreter-dashboard'); 

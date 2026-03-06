@@ -32,7 +32,7 @@ class AppPages {
     GetPage(
       name: Routes.CLIENT_DASHBOARD, 
       page: () => const ClientDashboardPage(), 
-      binding: ClientDashboardBinding()
+     binding: ClientDashboardBinding(),
     ),
   ];
 }

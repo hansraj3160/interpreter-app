@@ -58,12 +58,18 @@ class WelcomePage extends GetView<WelcomeController> {
               
               // Continue Button
               Expanded(
-                child: ElevatedButton(
-                  onPressed: controller.continueToNext,
-                  child: const Text(
-                    'Continue',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: controller.continueToNext,
+                        child: const Text(
+                          'Continue',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 20),

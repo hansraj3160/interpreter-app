@@ -60,8 +60,22 @@ class AuthController extends GetxController {
       isLoading.value = false;
 
       Get.snackbar('Success', 'Account created successfully!', snackPosition: SnackPosition.BOTTOM);
-      Get.offNamed('/login', arguments: {'role': role});
+      Get.offNamed(Routes.LOGIN, arguments: {'role': role});
     }
+  }
+
+  void forgotPassword(String email) async {
+    isLoading.value = true;
+    // TODO: API call for password reset
+    await Future.delayed(const Duration(seconds: 2));
+    isLoading.value = false;
+
+    Get.snackbar(
+      'Email Sent',
+      'Password reset link sent to $email',
+      snackPosition: SnackPosition.BOTTOM,
+    );
+    Get.back();
   }
 
   @override

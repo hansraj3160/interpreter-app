@@ -60,9 +60,35 @@ class DioClient {
   }
 
   // POST Request wrapper
-  Future<Response> post(String url, {dynamic data}) async {
+  Future<Response> post(
+    String url, {
+    dynamic data,
+    Map<String, dynamic>? headers,
+  }) async {
     try {
-      final response = await _dio.post(url, data: data);
+      final response = await _dio.post(
+        url,
+        data: data,
+        options: Options(headers: headers),
+      );
+      return response;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // PUT Request wrapper
+  Future<Response> put(
+    String url, {
+    dynamic data,
+    Map<String, dynamic>? headers,
+  }) async {
+    try {
+      final response = await _dio.put(
+        url,
+        data: data,
+        options: Options(headers: headers),
+      );
       return response;
     } on DioException catch (e) {
       throw _handleError(e);

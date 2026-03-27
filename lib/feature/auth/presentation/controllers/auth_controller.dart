@@ -16,22 +16,10 @@ class AuthController extends GetxController {
   // Role aayega Welcome screen se
   String role = '';
 
-  // Text Controllers
-  final emailController = TextEditingController(text: "abc@gmail.com");
-  final passwordController = TextEditingController(text: "password123");
-  final confirmPasswordController = TextEditingController();
-  final otpController = TextEditingController();
-  final newPasswordController = TextEditingController();
-  final nameController = TextEditingController(); // For Signup
-  final phoneController = TextEditingController();
-  final preferredLanguageController = TextEditingController();
-  final dateOfBirthController = TextEditingController();
-
   // Observables for state management
   final isPasswordHidden = true.obs;
   final isConfirmPasswordHidden = true.obs;
   final isLoading = false.obs;
-  final selectedGender = ''.obs;
 
   List<String> get genderOptions => const ['male', 'female', 'other'];
 
@@ -55,26 +43,16 @@ class AuthController extends GetxController {
   }
 
   bool get isClientRole => role.toLowerCase() == 'client';
+  bool get isInterpreterRole => role.toLowerCase() == 'interpreter';
+  bool get requiresExtendedSignupData => isClientRole || isInterpreterRole;
 
-  Future<void> pickDateOfBirth(BuildContext context) async {
-    final now = DateTime.now();
-    final initialDate = DateTime(now.year - 18, now.month, now.day);
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: initialDate,
-      firstDate: DateTime(1900),
-      lastDate: now,
-    );
-
-    if (picked == null) return;
-    dateOfBirthController.text =
-        '${picked.year.toString().padLeft(4, '0')}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
-  }
-
-  Future<void> login() async {
+  Future<void> login({
+    required String email,
+    required String password,
+  }) async {
     final payload = <String, dynamic>{
-      'email': emailController.text.trim(),
-      'password': passwordController.text.trim(),
+      'email': email.trim(),
+      'password': password.trim(),
     };
 
     isLoading.value = true;
@@ -146,23 +124,32 @@ class AuthController extends GetxController {
     }
   }
 
-  Future<void> signup() async {
+  Future<void> signup({
+    required String name,
+    required String email,
+    required String password,
+    String phone = '',
+    List<String> preferredLanguages = const <String>['English'],
+    String gender = '',
+    String dateOfBirth = '',
+  }) async {
     final normalizedRole = role.trim().toLowerCase();
 
     final payload = <String, dynamic>{
-      'name': nameController.text.trim(),
-      'email': emailController.text.trim(),
-      'password': passwordController.text.trim(),
+      'name': name.trim(),
+      'email': email.trim(),
+      'password': password.trim(),
       'role': normalizedRole,
     };
 
-    if (normalizedRole == 'client') {
-      payload['phone'] = _normalizePhone(phoneController.text);
-      payload['preferred_language'] = _parsePreferredLanguages(
-        preferredLanguageController.text,
-      );
-      payload['gender'] = selectedGender.value.trim().toLowerCase();
-      payload['dateOfBirth'] = dateOfBirthController.text.trim();
+    if (requiresExtendedSignupData) {
+      payload['phone'] = _normalizePhone(phone);
+      payload['preferred_language'] = preferredLanguages
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
+      payload['gender'] = gender.trim().toLowerCase();
+      payload['dateOfBirth'] = dateOfBirth.trim();
     }
 
     isLoading.value = true;
@@ -196,8 +183,14 @@ class AuthController extends GetxController {
         userId == null ? message : '$message (User ID: $userId)',
         snackPosition: SnackPosition.BOTTOM,
       );
-      _clearSignupFields();
-      Get.offNamed(Routes.LOGIN, arguments: {'role': role});
+
+      if (normalizedRole == 'client') {
+        Get.offAllNamed(Routes.CLIENT_DASHBOARD);
+      } else if (normalizedRole == 'interpreter') {
+        Get.offAllNamed(Routes.INTERPRETER_SETUP_PROFILE);
+      } else {
+        Get.offNamed(Routes.LOGIN, arguments: {'role': role});
+      }
     } catch (e) {
       if (kDebugMode) {
         print('❌ [SIGNUP EXCEPTION] $e');
@@ -212,15 +205,6 @@ class AuthController extends GetxController {
     }
   }
 
-  List<String> _parsePreferredLanguages(String raw) {
-    final parsed = raw
-        .split(',')
-        .map((e) => e.trim())
-        .where((e) => e.isNotEmpty)
-        .toList();
-    return parsed;
-  }
-
   String _normalizePhone(String raw) {
     return raw.replaceAll(RegExp(r'\s+'), '');
   }
@@ -231,25 +215,6 @@ class AuthController extends GetxController {
       return raw.replaceFirst('Exception:', '').trim();
     }
     return raw;
-  }
-
-  void _clearSignupFields() {
-    nameController.clear();
-    emailController.clear();
-    passwordController.clear();
-    confirmPasswordController.clear();
-    phoneController.clear();
-    preferredLanguageController.clear();
-    dateOfBirthController.clear();
-    selectedGender.value = '';
-    isPasswordHidden.value = true;
-    isConfirmPasswordHidden.value = true;
-  }
-
-  void clearResetPasswordFields() {
-    otpController.clear();
-    newPasswordController.clear();
-    isPasswordHidden.value = true;
   }
 
   void forgotPassword(String email) async {
@@ -290,13 +255,13 @@ class AuthController extends GetxController {
         message,
         snackPosition: SnackPosition.BOTTOM,
       );
-      clearResetPasswordFields();
       Get.toNamed(
-        Routes.RESET_PASSWORD,
+        Routes.VERIFY_OTP,
         arguments: {
           'email': forgotResponse.data.email.isEmpty
               ? email.trim()
               : forgotResponse.data.email,
+          'otp': forgotResponse.data.otp,
           'expiresAt': forgotResponse.data.expiresAt,
         },
       );
@@ -314,73 +279,7 @@ class AuthController extends GetxController {
     }
   }
 
-  Future<void> resetPassword({
-    required String email,
-    required String otp,
-    required String newPassword,
-  }) async {
-    final payload = <String, dynamic>{
-      'email': email.trim(),
-      'otp': otp.trim(),
-      'newPassword': newPassword.trim(),
-    };
-
-    isLoading.value = true;
-    try {
-      if (kDebugMode) {
-        final safePayload = Map<String, dynamic>.from(payload)
-          ..update('newPassword', (_) => '***');
-        print('📝 [RESET PASSWORD PAYLOAD] $safePayload');
-      }
-
-      final response =
-          await _dioClient.post(ApiConstants.resetPassword, data: payload);
-      final resetResponse = ResetPasswordResponseModel.fromJson(response.data);
-
-      if (!resetResponse.success) {
-        throw Exception(
-          resetResponse.message.isEmpty
-              ? 'Reset password failed'
-              : resetResponse.message,
-        );
-      }
-
-      final message = resetResponse.message.isEmpty
-          ? 'Password reset successfully'
-          : resetResponse.message;
-
-      Get.snackbar(
-        'Success',
-        message,
-        snackPosition: SnackPosition.BOTTOM,
-      );
-      clearResetPasswordFields();
-      Get.offAllNamed(Routes.LOGIN, arguments: {'role': role});
-    } catch (e) {
-      if (kDebugMode) {
-        print('❌ [RESET PASSWORD EXCEPTION] $e');
-      }
-      Get.snackbar(
-        'Reset Failed',
-        _readableErrorMessage(e),
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    } finally {
-      isLoading.value = false;
-    }
-  }
 
   @override
-  void onClose() {
-    emailController.dispose();
-    passwordController.dispose();
-    confirmPasswordController.dispose();
-    otpController.dispose();
-    newPasswordController.dispose();
-    nameController.dispose();
-    phoneController.dispose();
-    preferredLanguageController.dispose();
-    dateOfBirthController.dispose();
-    super.onClose();
-  }
+  void onClose() => super.onClose();
 }

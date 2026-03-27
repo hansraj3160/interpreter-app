@@ -10,8 +10,8 @@ class AuthLogo extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         child: Image.asset(
           'assets/logo.jpeg',
-          width: 80,
-          height: 80,
+          width: 110,
+          height: 110,
           fit: BoxFit.cover,
         ),
       ),

@@ -12,6 +12,50 @@ class SignupPage extends StatefulWidget {
 
 class _SignupPageState extends State<SignupPage> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final TextEditingController _nameCtrl = TextEditingController();
+  final TextEditingController _emailCtrl = TextEditingController();
+  final TextEditingController _phoneCtrl = TextEditingController();
+  final TextEditingController _preferredLanguageCtrl = TextEditingController();
+  final TextEditingController _dateOfBirthCtrl = TextEditingController();
+  final TextEditingController _passwordCtrl = TextEditingController();
+  final TextEditingController _confirmPasswordCtrl = TextEditingController();
+
+  String _selectedGender = '';
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _emailCtrl.dispose();
+    _phoneCtrl.dispose();
+    _preferredLanguageCtrl.dispose();
+    _dateOfBirthCtrl.dispose();
+    _passwordCtrl.dispose();
+    _confirmPasswordCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickDateOfBirth(BuildContext context) async {
+    final now = DateTime.now();
+    final initialDate = DateTime(now.year - 18, now.month, now.day);
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: DateTime(1900),
+      lastDate: now,
+    );
+
+    if (picked == null) return;
+    _dateOfBirthCtrl.text =
+        '${picked.year.toString().padLeft(4, '0')}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
+  }
+
+  List<String> _parsePreferredLanguages(String raw) {
+    return raw
+        .split(',')
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,10 +75,10 @@ class _SignupPageState extends State<SignupPage> {
 
                 // ── Logo ────────────────────────────────────────
                 const AuthLogo(),
-                const SizedBox(height: 24),
+                const SizedBox(height: 15),
 
                 Text(
-                  'Join Us!',
+                  'Join Us! as a ${controller.isClientRole ? 'Client' : 'Interpreter'}',
                   style: theme.textTheme.headlineSmall?.copyWith(
                     color: theme.colorScheme.primary,
                   ),
@@ -54,7 +98,7 @@ class _SignupPageState extends State<SignupPage> {
 
                 // ── Full Name ───────────────────────────────────
                 TextFormField(
-                  controller: controller.nameController,
+                  controller: _nameCtrl,
                   decoration: const InputDecoration(
                     labelText: 'Full Name',
                     prefixIcon: Icon(Icons.person_outline),
@@ -65,7 +109,7 @@ class _SignupPageState extends State<SignupPage> {
                 const SizedBox(height: 16),
                 // ── Email ───────────────────────────────────────
                 TextFormField(
-                  controller: controller.emailController,
+                  controller: _emailCtrl,
                   keyboardType: TextInputType.emailAddress,
                   decoration: const InputDecoration(
                     labelText: 'Email',
@@ -84,22 +128,20 @@ class _SignupPageState extends State<SignupPage> {
                   },
                 ),
                 const SizedBox(height: 16),
-                Obx(() {
-                  if (!controller.isClientRole) {
-                    return const SizedBox.shrink();
-                  }
-
-                  return Column(
+                if (controller.requiresExtendedSignupData)
+                  Column(
                     children: [
                       TextFormField(
-                        controller: controller.phoneController,
+                        controller: _phoneCtrl,
                         keyboardType: TextInputType.phone,
                         decoration: const InputDecoration(
                           labelText: 'Phone',
                           prefixIcon: Icon(Icons.phone_outlined),
                         ),
                         validator: (value) {
-                          if (!controller.isClientRole) return null;
+                          if (!controller.requiresExtendedSignupData) {
+                            return null;
+                          }
                           final phone = (value ?? '').replaceAll(
                             RegExp(r'\s+'),
                             '',
@@ -114,32 +156,34 @@ class _SignupPageState extends State<SignupPage> {
                         },
                       ),
                       const SizedBox(height: 16),
-                      TextFormField(
-                        controller: controller.preferredLanguageController,
-                        decoration: const InputDecoration(
-                          labelText: 'Preferred Language',
-                          hintText: 'Example: Hind, English',
-                          prefixIcon: Icon(Icons.language_outlined),
+                      if (controller.isClientRole) ...[
+                        TextFormField(
+                          controller: _preferredLanguageCtrl,
+                          decoration: const InputDecoration(
+                            labelText: 'Preferred Language',
+                            hintText: 'Example: Hind, English',
+                            prefixIcon: Icon(Icons.language_outlined),
+                          ),
+                          validator: (value) {
+                            if (!controller.isClientRole) return null;
+                            final languages = value
+                                    ?.split(',')
+                                    .map((e) => e.trim())
+                                    .where((e) => e.isNotEmpty)
+                                    .toList() ??
+                                const [];
+                            if (languages.isEmpty) {
+                              return 'Please enter preferred language';
+                            }
+                            return null;
+                          },
                         ),
-                        validator: (value) {
-                          if (!controller.isClientRole) return null;
-                          final languages = value
-                                  ?.split(',')
-                                  .map((e) => e.trim())
-                                  .where((e) => e.isNotEmpty)
-                                  .toList() ??
-                              const [];
-                          if (languages.isEmpty) {
-                            return 'Please enter preferred language';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
+                        const SizedBox(height: 16),
+                      ],
                       DropdownButtonFormField<String>(
-                        value: controller.selectedGender.value.isEmpty
+                        value: _selectedGender.isEmpty
                             ? null
-                            : controller.selectedGender.value,
+                            : _selectedGender,
                         decoration: const InputDecoration(
                           labelText: 'Gender',
                           prefixIcon: Icon(Icons.wc_outlined),
@@ -153,10 +197,14 @@ class _SignupPageState extends State<SignupPage> {
                             )
                             .toList(),
                         onChanged: (value) {
-                          controller.selectedGender.value = value ?? '';
+                          setState(() {
+                            _selectedGender = value ?? '';
+                          });
                         },
                         validator: (value) {
-                          if (!controller.isClientRole) return null;
+                          if (!controller.requiresExtendedSignupData) {
+                            return null;
+                          }
                           if (value == null || value.isEmpty) {
                             return 'Please select gender';
                           }
@@ -165,16 +213,18 @@ class _SignupPageState extends State<SignupPage> {
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
-                        controller: controller.dateOfBirthController,
+                        controller: _dateOfBirthCtrl,
                         readOnly: true,
                         decoration: const InputDecoration(
                           labelText: 'Date of Birth',
                           hintText: 'YYYY-MM-DD',
                           prefixIcon: Icon(Icons.calendar_today_outlined),
                         ),
-                        onTap: () => controller.pickDateOfBirth(context),
+                        onTap: () => _pickDateOfBirth(context),
                         validator: (value) {
-                          if (!controller.isClientRole) return null;
+                          if (!controller.requiresExtendedSignupData) {
+                            return null;
+                          }
                           if (value == null || value.trim().isEmpty) {
                             return 'Please select date of birth';
                           }
@@ -183,14 +233,13 @@ class _SignupPageState extends State<SignupPage> {
                       ),
                       const SizedBox(height: 16),
                     ],
-                  );
-                }),
+                  ),
 
               
 
                 // ── Password ────────────────────────────────────
                 Obx(() => TextFormField(
-                      controller: controller.passwordController,
+                      controller: _passwordCtrl,
                       obscureText: controller.isPasswordHidden.value,
                       decoration: InputDecoration(
                         labelText: 'Password',
@@ -210,7 +259,7 @@ class _SignupPageState extends State<SignupPage> {
 
                 // ── Confirm Password ───────────────────────────
                 Obx(() => TextFormField(
-                      controller: controller.confirmPasswordController,
+                      controller: _confirmPasswordCtrl,
                       obscureText: controller.isConfirmPasswordHidden.value,
                       decoration: InputDecoration(
                         labelText: 'Confirm Password',
@@ -229,7 +278,7 @@ class _SignupPageState extends State<SignupPage> {
                         if (confirm.isEmpty) {
                           return 'Please confirm your password';
                         }
-                        if (confirm != controller.passwordController.text.trim()) {
+                        if (confirm != _passwordCtrl.text.trim()) {
                           return 'Passwords do not match';
                         }
                         return null;
@@ -245,7 +294,16 @@ class _SignupPageState extends State<SignupPage> {
                         final isValid =
                           _formKey.currentState?.validate() ?? false;
                         if (!isValid) return;
-                        controller.signup();
+                        controller.signup(
+                          name: _nameCtrl.text,
+                          email: _emailCtrl.text,
+                          password: _passwordCtrl.text,
+                          phone: _phoneCtrl.text,
+                          preferredLanguages:
+                              _parsePreferredLanguages(_preferredLanguageCtrl.text),
+                          gender: _selectedGender,
+                          dateOfBirth: _dateOfBirthCtrl.text,
+                        );
                       },
                       child: controller.isLoading.value
                           ? const SizedBox(

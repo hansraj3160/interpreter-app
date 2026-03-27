@@ -13,6 +13,15 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final TextEditingController _emailCtrl = TextEditingController();
+  final TextEditingController _passwordCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _emailCtrl.dispose();
+    _passwordCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,20 +62,27 @@ class _LoginPageState extends State<LoginPage> {
 
                 // ── Email ───────────────────────────────────────
                 TextFormField(
-                  controller: controller.emailController,
+                  controller: _emailCtrl,
                   keyboardType: TextInputType.emailAddress,
                   decoration: const InputDecoration(
                     labelText: 'Email',
                     prefixIcon: Icon(Icons.email_outlined),
                   ),
-                  validator: (value) =>
-                      value!.isEmpty ? 'Please enter email' : null,
+                  validator: (value) {
+                    final email = value?.trim() ?? '';
+                    if (email.isEmpty) return 'Please enter email';
+                    final emailRegex = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
+                    if (!emailRegex.hasMatch(email)) {
+                      return 'Please enter a valid email';
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 16),
 
                 // ── Password ────────────────────────────────────
                 Obx(() => TextFormField(
-                      controller: controller.passwordController,
+                      controller: _passwordCtrl,
                       obscureText: controller.isPasswordHidden.value,
                       decoration: InputDecoration(
                         labelText: 'Password',
@@ -102,7 +118,10 @@ class _LoginPageState extends State<LoginPage> {
                         final isValid =
                           _formKey.currentState?.validate() ?? false;
                         if (!isValid) return;
-                        controller.login();
+                        controller.login(
+                          email: _emailCtrl.text,
+                          password: _passwordCtrl.text,
+                        );
                       },
                       child: controller.isLoading.value
                           ? const SizedBox(

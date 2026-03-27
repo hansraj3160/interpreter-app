@@ -1,7 +1,15 @@
 import 'package:get/get.dart';
+import 'package:interpreter_app/feature/interpreter_setup/presentation/pages/upload_docs_page.dart';
+import 'package:interpreter_app/feature/interpreter_setup/presentation/pages/interpreter_dashboard_page.dart';
+import 'package:interpreter_app/feature/interpreter_setup/presentation/pages/profile_setup_page.dart';
+import 'package:interpreter_app/feature/interpreter_setup/presentation/bindings/interpreter_setup_binding.dart';
+import 'package:interpreter_app/feature/interpreter_setup/presentation/bindings/interpreter_upload_docs_binding.dart';
+import 'package:interpreter_app/feature/auth/presentation/bindings/verify_otp_binding.dart';
+import 'package:interpreter_app/feature/auth/presentation/bindings/reset_password_binding.dart';
 import 'package:interpreter_app/feature/auth/presentation/pages/forgot_password_page.dart';
 import 'package:interpreter_app/feature/auth/presentation/pages/reset_password_page.dart';
 import 'package:interpreter_app/feature/auth/presentation/pages/signup_page.dart';
+import 'package:interpreter_app/feature/auth/presentation/pages/verify_otp_page.dart';
 import 'package:interpreter_app/feature/client_dashboard/presentation/pages/client_dashboard_page.dart';
 import 'package:interpreter_app/feature/welcome/presentation/bindings/welcome_binding.dart';
 import 'package:interpreter_app/feature/welcome/presentation/page/welcome_page.dart';
@@ -32,7 +40,22 @@ class AppPages {
     GetPage(name: Routes.LOGIN, page: () => const LoginPage(), binding: AuthBinding()),
     GetPage(name: Routes.SIGNUP, page: () => const SignupPage(), binding: AuthBinding()),
     GetPage(name: Routes.FORGOT_PASSWORD, page: () => const ForgotPasswordPage(), binding: AuthBinding()),
-    GetPage(name: Routes.RESET_PASSWORD, page: () => const ResetPasswordPage(), binding: AuthBinding()),
+    GetPage(name: Routes.VERIFY_OTP, page: () => const VerifyOtpPage(), binding: VerifyOtpBinding()),
+    GetPage(name: Routes.RESET_PASSWORD, page: () => const ResetPasswordPage(), binding: ResetPasswordBinding()),
+    GetPage(
+      name: Routes.INTERPRETER_SETUP_PROFILE,
+      page: () => const ProfileSetupPage(),
+      binding: InterpreterSetupBinding(),
+    ),
+    GetPage(
+      name: Routes.INTERPRETER_UPLOAD_DOCS,
+      page: () => const UploadDocsPage(),
+      binding: InterpreterUploadDocsBinding(),
+    ),
+    GetPage(
+      name: Routes.INTERPRETER_DASHBOARD,
+      page: () => const InterpreterDashboardPage(),
+    ),
     GetPage(
       name: Routes.CLIENT_DASHBOARD, 
       page: () => const ClientDashboardPage(), 

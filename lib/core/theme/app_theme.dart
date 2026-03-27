@@ -204,7 +204,7 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: colorScheme.primary,
+          backgroundColor: colorScheme.secondary,
           foregroundColor: colorScheme.onPrimary,
           disabledBackgroundColor:
               colorScheme.onSurface.withValues(alpha: 0.12),
@@ -220,7 +220,7 @@ class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: colorScheme.primary,
+          backgroundColor: colorScheme.secondary,
           foregroundColor: colorScheme.onPrimary,
           disabledBackgroundColor:
               colorScheme.onSurface.withValues(alpha: 0.12),
@@ -246,7 +246,7 @@ class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: colorScheme.primary,
+          foregroundColor: colorScheme.secondary,
           disabledForegroundColor:
               colorScheme.onSurface.withValues(alpha: 0.38),
           padding: const EdgeInsets.symmetric(
@@ -268,7 +268,7 @@ class AppTheme {
           color: colorScheme.onSurfaceVariant,
         ),
         floatingLabelStyle: textTheme.bodyMedium?.copyWith(
-          color: colorScheme.primary,
+          color: colorScheme.secondary,
           fontWeight: FontWeight.w600,
         ),
         errorStyle: textTheme.bodySmall?.copyWith(

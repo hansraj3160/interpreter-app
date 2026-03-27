@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/auth_controller.dart';
+import '../widgets/auth_logo.dart';
 
 class ForgotPasswordPage extends GetView<AuthController> {
   const ForgotPasswordPage({super.key});
@@ -30,17 +31,7 @@ class ForgotPasswordPage extends GetView<AuthController> {
                 const SizedBox(height: 32),
 
                 // ── Logo ────────────────────────────────────────
-                Center(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: Image.asset(
-                      'assets/logo.jpeg',
-                      width: 80,
-                      height: 80,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
+                const AuthLogo(),
                 const SizedBox(height: 28),
 
                 Text(

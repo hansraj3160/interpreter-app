@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/client_dashboard_controller.dart';
+import '../widgets/interpreter_card.dart';
+import '../widgets/language_filter_chip.dart';
 
 class ClientHomeView extends StatelessWidget {
   final ClientDashboardController controller;
@@ -44,9 +46,8 @@ class ClientHomeView extends StatelessWidget {
             children: [
               Text(
                 'Hello Client 👋',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade600,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: 4),
@@ -78,11 +79,11 @@ class ClientHomeView extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(.05),
+              color: theme.colorScheme.shadow.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             )
@@ -92,8 +93,10 @@ class ClientHomeView extends StatelessWidget {
           onChanged: (val) => controller.searchQuery.value = val,
           decoration: InputDecoration(
             hintText: "Search interpreters...",
-            hintStyle: TextStyle(color: Colors.grey.shade500),
-            icon: Icon(Icons.search, color: Colors.grey.shade600),
+            hintStyle: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            icon: Icon(Icons.search, color: theme.colorScheme.onSurfaceVariant),
             suffixIcon: Icon(
               Icons.tune,
               color: theme.colorScheme.primary,
@@ -139,38 +142,10 @@ class ClientHomeView extends StatelessWidget {
                   final isSelected =
                       controller.selectedLanguage.value == language;
 
-                  return GestureDetector(
-                    onTap: () {
-                      controller.selectedLanguage.value = language;
-                    },
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 6),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? theme.colorScheme.primary
-                            : Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: isSelected
-                              ? theme.colorScheme.primary
-                              : Colors.grey.shade300,
-                        ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          language,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: isSelected
-                                ? Colors.white
-                                : Colors.grey.shade700,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ),
+                  return LanguageFilterChip(
+                    label: language,
+                    isSelected: isSelected,
+                    onTap: () => controller.selectedLanguage.value = language,
                   );
                 });
               },
@@ -205,132 +180,61 @@ class ClientHomeView extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: controller.topInterpreters.length,
-            itemBuilder: (context, index) {
-              final interpreter = controller.topInterpreters[index];
+          Obx(() {
+            if (controller.isLoadingInterpreters.value) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 20),
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
 
-              return Container(
-                margin: const EdgeInsets.only(bottom: 14),
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(.05),
-                      blurRadius: 12,
-                      offset: const Offset(0, 6),
-                    )
-                  ],
-                ),
-                child: Row(
+            if (controller.interpretersError.value.isNotEmpty) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: Column(
                   children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: Image.network(
-  'https://ui-avatars.com/api/?name=${interpreter['name']}&background=random',
-  height: 60,
-  width: 60,
-  fit: BoxFit.cover,
-
-  /// Loading indicator
-  loadingBuilder: (context, child, loadingProgress) {
-    if (loadingProgress == null) return child;
-    return const SizedBox(
-      height: 60,
-      width: 60,
-      child: Center(
-        child: CircularProgressIndicator(strokeWidth: 2),
-      ),
-    );
-  },
-
-  /// Error fallback
-  errorBuilder: (context, error, stackTrace) {
-    return Container(
-      height: 60,
-      width: 60,
-      decoration: BoxDecoration(
-        color: Colors.grey.shade200,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: const Icon(
-        Icons.person,
-        color: Colors.grey,
-        size: 28,
-      ),
-    );
-  },
-)
-                    ),
-                    const SizedBox(width: 12),
-
-                    /// DETAILS
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            interpreter['name'],
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            interpreter['language'],
-                            style: TextStyle(
-                              color: theme.colorScheme.primary,
-                              fontSize: 13,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            interpreter['specialty'],
-                            style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
+                    Text(
+                      controller.interpretersError.value,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.error,
                       ),
                     ),
-
-                    /// RATING
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.star,
-                                color: Colors.amber, size: 16),
-                            const SizedBox(width: 4),
-                            Text(
-                              interpreter['rating'].toString(),
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w500,
-                              ),
-                            )
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          interpreter['rate'],
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                        )
-                      ],
-                    )
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: controller.fetchInterpreters,
+                      child: const Text('Retry'),
+                    ),
                   ],
                 ),
               );
-            },
-          )
+            }
+
+            if (controller.topInterpreters.isEmpty) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: Text(
+                  'No interpreters available right now.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              );
+            }
+
+            return ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: controller.topInterpreters.length,
+              itemBuilder: (context, index) {
+                final interpreter = controller.topInterpreters[index];
+
+                return InterpreterCard(
+                  interpreter: interpreter,
+                );
+              },
+            );
+          }),
         ],
       ),
     );

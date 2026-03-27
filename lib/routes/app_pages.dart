@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:interpreter_app/feature/auth/presentation/pages/forgot_password_page.dart';
+import 'package:interpreter_app/feature/auth/presentation/pages/reset_password_page.dart';
 import 'package:interpreter_app/feature/auth/presentation/pages/signup_page.dart';
 import 'package:interpreter_app/feature/client_dashboard/presentation/pages/client_dashboard_page.dart';
 import 'package:interpreter_app/feature/welcome/presentation/bindings/welcome_binding.dart';
@@ -31,6 +32,7 @@ class AppPages {
     GetPage(name: Routes.LOGIN, page: () => const LoginPage(), binding: AuthBinding()),
     GetPage(name: Routes.SIGNUP, page: () => const SignupPage(), binding: AuthBinding()),
     GetPage(name: Routes.FORGOT_PASSWORD, page: () => const ForgotPasswordPage(), binding: AuthBinding()),
+    GetPage(name: Routes.RESET_PASSWORD, page: () => const ResetPasswordPage(), binding: AuthBinding()),
     GetPage(
       name: Routes.CLIENT_DASHBOARD, 
       page: () => const ClientDashboardPage(), 

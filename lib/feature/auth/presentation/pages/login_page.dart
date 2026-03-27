@@ -2,12 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:interpreter_app/routes/app_pages.dart';
 import '../controllers/auth_controller.dart';
+import '../widgets/auth_logo.dart';
 
-class LoginPage extends GetView<AuthController> {
+class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
   @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
+  @override
   Widget build(BuildContext context) {
+    final controller = Get.find<AuthController>();
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -15,24 +24,14 @@ class LoginPage extends GetView<AuthController> {
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Form(
-            key: controller.loginFormKey,
+            key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 40),
 
                 // ── Logo ────────────────────────────────────────
-                Center(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: Image.asset(
-                      'assets/logo.jpeg',
-                      width: 90,
-                      height: 90,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
+                const AuthLogo(),
                 const SizedBox(height: 28),
 
                 Text(
@@ -97,8 +96,14 @@ class LoginPage extends GetView<AuthController> {
 
                 // ── Login Button ────────────────────────────────
                 Obx(() => ElevatedButton(
-                      onPressed:
-                          controller.isLoading.value ? null : controller.login,
+                    onPressed: controller.isLoading.value
+                      ? null
+                      : () {
+                        final isValid =
+                          _formKey.currentState?.validate() ?? false;
+                        if (!isValid) return;
+                        controller.login();
+                      },
                       child: controller.isLoading.value
                           ? const SizedBox(
                               height: 20,

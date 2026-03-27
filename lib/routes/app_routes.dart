@@ -8,6 +8,7 @@ abstract class Routes {
   static const LOGIN = '/login';
   static const SIGNUP = '/signup';
   static const FORGOT_PASSWORD = '/forgot-password';
+  static const RESET_PASSWORD = '/reset-password';
   static const CLIENT_DASHBOARD = '/client-dashboard';
   // Future routes yahan add honge, e.g.,
   // static const LOGIN = '/login';

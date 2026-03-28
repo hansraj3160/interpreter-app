@@ -15,194 +15,271 @@ class UploadDocsPage extends GetView<InterpreterUploadDocsController> {
       appBar: AppBar(
         title: const Text('Upload Documents'),
       ),
-      body: Obx(
-        () {
-          final hasId = controller.idDocumentPath.value.isNotEmpty;
-          final hasCertification = controller.certificationPath.value.isNotEmpty;
-          final canSubmit = hasId && hasCertification && !controller.isLoading.value;
+      body: Obx(() {
+        final identityProof = controller.identityProof.value;
+        final languageCertificates = controller.languageCertificates;
+        final resume = controller.resume.value;
+        final isLoading = controller.isLoading.value;
 
-          return SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Verification Documents',
-                    style: theme.textTheme.headlineSmall,
+        return SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Upload Documents',
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Upload a clear Government ID and your Professional Certification to activate your interpreter account.',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Please provide your professional documents. Formats: PDF, JPG, PNG.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
                   ),
-                  const SizedBox(height: 24),
-                  _UploadCard(
-                    title: 'Upload Government ID',
-                    description: 'Passport, National ID, or Driver License',
-                    filePath: controller.idDocumentPath.value,
-                    onPick: controller.isLoading.value
-                        ? null
-                        : controller.pickIdDocument,
-                  ),
-                  const SizedBox(height: 14),
-                  _UploadCard(
-                    title: 'Upload Professional Certification',
-                    description: 'Interpreter certificate or equivalent document',
-                    filePath: controller.certificationPath.value,
-                    onPick: controller.isLoading.value
-                        ? null
-                        : controller.pickCertificationDocument,
-                  ),
-                  const SizedBox(height: 16),
-                  if (!hasId || !hasCertification)
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: colorScheme.errorContainer.withValues(alpha: 0.45),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        'Please select both documents before submitting.',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onErrorContainer,
+                ),
+                const SizedBox(height: 20),
+                _buildUploadCard(
+                  context: context,
+                  title: 'Identity Proof',
+                  onTap: isLoading ? () {} : controller.pickIdentityProof,
+                  content: identityProof == null
+                      ? _buildEmptyState(
+                          context,
+                          label: 'Tap to upload identity proof',
+                        )
+                      : _buildFileTile(
+                          context,
+                          fileName: identityProof.name,
+                          onDelete: isLoading ? null : controller.removeIdentityProof,
                         ),
+                ),
+                const SizedBox(height: 14),
+                _buildUploadCard(
+                  context: context,
+                  title: 'Language Certificates',
+                  onTap: isLoading ? () {} : controller.pickLanguageCertificates,
+                  content: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: isLoading ? null : controller.pickLanguageCertificates,
+                        icon: const Icon(Icons.add),
+                        label: const Text('Add Certificate'),
                       ),
-                    ),
-                  const SizedBox(height: 28),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: canSubmit ? controller.uploadDocuments : null,
-                      child: controller.isLoading.value
-                          ? SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: colorScheme.onPrimary,
+                      const SizedBox(height: 10),
+                      if (languageCertificates.isEmpty)
+                        _buildEmptyState(
+                          context,
+                          label: 'No certificates added yet',
+                        )
+                      else
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: List.generate(languageCertificates.length, (index) {
+                            final file = languageCertificates[index];
+                            return Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: colorScheme.surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: colorScheme.outlineVariant),
                               ),
-                            )
-                          : const Text('Submit Documents'),
-                    ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.description_outlined,
+                                    size: 18,
+                                    color: colorScheme.primary,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  ConstrainedBox(
+                                    constraints: const BoxConstraints(maxWidth: 170),
+                                    child: Text(
+                                      file.name,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: theme.textTheme.bodySmall,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  IconButton(
+                                    visualDensity: VisualDensity.compact,
+                                    onPressed: isLoading
+                                        ? null
+                                        : () => controller.removeLanguageCertificate(index),
+                                    icon: Icon(
+                                      Icons.close,
+                                      size: 16,
+                                      color: colorScheme.error,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }),
+                        ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 14),
+                _buildUploadCard(
+                  context: context,
+                  title: 'Resume',
+                  onTap: isLoading ? () {} : controller.pickResume,
+                  content: resume == null
+                      ? _buildEmptyState(
+                          context,
+                          label: 'Tap to upload resume',
+                        )
+                      : _buildFileTile(
+                          context,
+                          fileName: resume.name,
+                          onDelete: isLoading ? null : controller.removeResume,
+                        ),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: isLoading ? null : controller.uploadDocuments,
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48),
+                    ),
+                    child: isLoading
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: colorScheme.onPrimary,
+                            ),
+                          )
+                        : const Text('Submit Documents'),
+                  ),
+                ),
+              ],
             ),
-          );
-        },
-      ),
+          ),
+        );
+      }),
     );
   }
-}
 
-class _UploadCard extends StatelessWidget {
-  const _UploadCard({
-    required this.title,
-    required this.description,
-    required this.filePath,
-    required this.onPick,
-  });
-
-  final String title;
-  final String description;
-  final String filePath;
-  final VoidCallback? onPick;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildUploadCard({
+    required BuildContext context,
+    required String title,
+    required VoidCallback onTap,
+    required Widget content,
+  }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final hasFile = filePath.isNotEmpty;
 
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: colorScheme.outlineVariant),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: colorScheme.outlineVariant),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              title,
-              style: theme.textTheme.titleMedium,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              description,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 14),
-            OutlinedButton.icon(
-              onPressed: onPick,
-              icon: const Icon(Icons.attach_file),
-              label: Text(hasFile ? 'Change File' : 'Choose File'),
+            Row(
+              children: [
+                Icon(
+                  Icons.upload_file_outlined,
+                  color: colorScheme.primary,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
-            if (hasFile)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer.withValues(alpha: 0.45),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      _iconForFile(filePath),
-                      color: colorScheme.primary,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        _fileName(filePath),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurface,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            else
-              Text(
-                'No file selected',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
+            content,
           ],
         ),
       ),
     );
   }
 
-  static IconData _iconForFile(String path) {
-    final fileName = _fileName(path).toLowerCase();
-    if (fileName.endsWith('.pdf')) return Icons.picture_as_pdf_outlined;
-    if (fileName.endsWith('.jpg') ||
-        fileName.endsWith('.jpeg') ||
-        fileName.endsWith('.png')) {
-      return Icons.image_outlined;
-    }
-    return Icons.insert_drive_file_outlined;
+  Widget _buildEmptyState(BuildContext context, {required String label}) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Row(
+      children: [
+        Icon(
+          Icons.cloud_upload_outlined,
+          color: colorScheme.onSurfaceVariant,
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            label,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
-  static String _fileName(String path) {
-    final normalized = path.replaceAll('\\', '/');
-    final segments = normalized.split('/');
-    return segments.isNotEmpty ? segments.last : path;
+  Widget _buildFileTile(
+    BuildContext context, {
+    required String fileName,
+    required VoidCallback? onDelete,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: colorScheme.outlineVariant),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.description_outlined,
+            color: colorScheme.primary,
+            size: 18,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              fileName,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall,
+            ),
+          ),
+          IconButton(
+            onPressed: onDelete,
+            icon: Icon(
+              Icons.delete_outline,
+              color: colorScheme.error,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

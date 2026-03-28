@@ -4,8 +4,8 @@ class ApiConstants {
   static const String baseUrl = 'https://interpreter.ruhsolution.com/api';
   
   // Timeouts (Milliseconds)
-  static const int connectionTimeout = 10000; // 10 seconds
-  static const int receiveTimeout = 10000;    // 10 seconds
+  static const int connectionTimeout = 40000; // 10 seconds
+  static const int receiveTimeout = 40000;    // 10 seconds
 
   // Endpoints
   static const String login = '/auth/login';

@@ -3,61 +3,130 @@ import 'package:file_picker/file_picker.dart';
 import 'package:get/get.dart' hide FormData, MultipartFile;
 import 'package:interpreter_app/core/network/api_constants.dart';
 import 'package:interpreter_app/core/network/dio_client.dart';
-import 'package:interpreter_app/core/utils/session_storage.dart';
-import 'package:interpreter_app/feature/auth/presentation/controllers/auth_controller.dart';
+import 'package:interpreter_app/core/utils/local_storage_helper.dart';
 import 'package:interpreter_app/routes/app_pages.dart';
 
 class InterpreterUploadDocsController extends GetxController {
-  final DioClient _dioClient = DioClient();
-  final SessionStorage _sessionStorage = SessionStorage();
+  InterpreterUploadDocsController({
+    required DioClient dioClient,
+    required LocalStorageHelper localStorageHelper,
+  })  : _dioClient = dioClient,
+        _localStorageHelper = localStorageHelper;
 
-  final idDocumentPath = ''.obs;
-  final certificationPath = ''.obs;
+  final DioClient _dioClient;
+  final LocalStorageHelper _localStorageHelper;
 
-  final isLoading = false.obs;
-  final errorMessage = RxnString();
+  final Rxn<PlatformFile> identityProof = Rxn<PlatformFile>();
+  final RxList<PlatformFile> languageCertificates = <PlatformFile>[].obs;
+  final Rxn<PlatformFile> resume = Rxn<PlatformFile>();
+  final RxBool isLoading = false.obs;
 
-  Future<void> pickIdDocument() async {
-    final selectedPath = await _pickDocument();
-    if (selectedPath != null) {
-      idDocumentPath.value = selectedPath;
+  static const List<String> _allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
+
+  Future<void> pickIdentityProof() async {
+    final file = await _pickSingleFile();
+    if (file != null) {
+      identityProof.value = file;
     }
   }
 
-  Future<void> pickCertificationDocument() async {
-    final selectedPath = await _pickDocument();
-    if (selectedPath != null) {
-      certificationPath.value = selectedPath;
+  Future<void> pickLanguageCertificates() async {
+    final files = await _pickMultipleFiles();
+    if (files.isNotEmpty) {
+      languageCertificates.addAll(files);
     }
+  }
+
+  Future<void> pickResume() async {
+    final file = await _pickSingleFile();
+    if (file != null) {
+      resume.value = file;
+    }
+  }
+
+  void removeIdentityProof() {
+    identityProof.value = null;
+  }
+
+  void removeLanguageCertificate(int index) {
+    if (index >= 0 && index < languageCertificates.length) {
+      languageCertificates.removeAt(index);
+    }
+  }
+
+  void removeResume() {
+    resume.value = null;
   }
 
   Future<void> uploadDocuments() async {
-    if (idDocumentPath.value.isEmpty || certificationPath.value.isEmpty) {
-      _showError('Please select both ID and Certification documents.');
+    if (identityProof.value == null) {
+      _showError('Please select an identity proof document.');
+      return;
+    }
+
+    if (languageCertificates.isEmpty) {
+      _showError('Please add at least one language certificate.');
+      return;
+    }
+
+    if (resume.value == null) {
+      _showError('Please select your resume.');
       return;
     }
 
     isLoading.value = true;
-    errorMessage.value = null;
 
     try {
-      final token = await _resolveToken();
+      final token = await _localStorageHelper.getToken();
       if (token.isEmpty) {
         throw Exception('Authentication token is missing. Please login again.');
       }
 
-      final formData = FormData.fromMap({
-        'document': [
+      final identityPath = identityProof.value?.path;
+      final resumePath = resume.value?.path;
+      if (identityPath == null || identityPath.isEmpty) {
+        throw Exception('Identity proof file path is invalid.');
+      }
+      if (resumePath == null || resumePath.isEmpty) {
+        throw Exception('Resume file path is invalid.');
+      }
+
+      final formData = FormData();
+      formData.files.add(
+        MapEntry(
+          'identity_proof',
           await MultipartFile.fromFile(
-            idDocumentPath.value,
-            filename: _fileNameFromPath(idDocumentPath.value),
+            identityPath,
+            filename: identityProof.value?.name ?? _fileNameFromPath(identityPath),
           ),
+        ),
+      );
+
+      for (final certificate in languageCertificates) {
+        final certPath = certificate.path;
+        if (certPath == null || certPath.isEmpty) {
+          continue;
+        }
+        formData.files.add(
+          MapEntry(
+            'language_certificate',
+            await MultipartFile.fromFile(
+              certPath,
+              filename: certificate.name,
+            ),
+          ),
+        );
+      }
+
+      formData.files.add(
+        MapEntry(
+          'resume',
           await MultipartFile.fromFile(
-            certificationPath.value,
-            filename: _fileNameFromPath(certificationPath.value),
+            resumePath,
+            filename: resume.value?.name ?? _fileNameFromPath(resumePath),
           ),
-        ],
-      });
+        ),
+      );
 
       final response = await _dioClient.post(
         ApiConstants.uploadInterpreterDocs,
@@ -80,9 +149,13 @@ class InterpreterUploadDocsController extends GetxController {
         throw Exception(message);
       }
 
+      final documentStatus = responseData is Map<String, dynamic>
+          ? responseData['document_status']?.toString() ?? 'pending'
+          : 'pending';
+
       Get.snackbar(
         'Success',
-        'Documents uploaded successfully',
+        'Documents uploaded successfully. Status: $documentStatus',
         snackPosition: SnackPosition.BOTTOM,
       );
       Get.offAllNamed(Routes.INTERPRETER_DASHBOARD);
@@ -93,30 +166,36 @@ class InterpreterUploadDocsController extends GetxController {
     }
   }
 
-  Future<String?> _pickDocument() async {
+  Future<PlatformFile?> _pickSingleFile() async {
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: const ['pdf', 'jpg', 'jpeg', 'png'],
+        allowedExtensions: _allowedExtensions,
         allowMultiple: false,
       );
 
-      return result?.files.single.path;
+      if (result == null || result.files.isEmpty) return null;
+      return result.files.first;
     } catch (e) {
       _showError('Unable to pick file: ${_readableErrorMessage(e)}');
       return null;
     }
   }
 
-  Future<String> _resolveToken() async {
-    final storedToken = await _sessionStorage.getToken();
-    if (storedToken.isNotEmpty) return storedToken;
+  Future<List<PlatformFile>> _pickMultipleFiles() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: _allowedExtensions,
+        allowMultiple: true,
+      );
 
-    if (Get.isRegistered<AuthController>()) {
-      return Get.find<AuthController>().authToken.value;
+      if (result == null || result.files.isEmpty) return const [];
+      return result.files;
+    } catch (e) {
+      _showError('Unable to pick files: ${_readableErrorMessage(e)}');
+      return const [];
     }
-
-    return '';
   }
 
   String _readableErrorMessage(Object error) {
@@ -134,7 +213,6 @@ class InterpreterUploadDocsController extends GetxController {
   }
 
   void _showError(String message) {
-    errorMessage.value = message;
     final colorScheme = Get.theme.colorScheme;
     Get.snackbar(
       'Upload Failed',

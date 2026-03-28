@@ -23,7 +23,9 @@ class LanguageFilterChip extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 6),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? colorScheme.primary : colorScheme.surface,
+          color: isSelected
+              ? colorScheme.primary
+              : colorScheme.surfaceVariant,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected ? colorScheme.primary : colorScheme.outlineVariant,

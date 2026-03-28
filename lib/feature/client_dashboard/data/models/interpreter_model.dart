@@ -1,75 +1,100 @@
 class InterpreterModel {
-  final String id;
+  final int id;
   final String name;
-  final String language;
-  final String specialty;
-  final double rating;
-  final int reviews;
-  final String rate;
+  final String email;
+  final String phone;
   final String profileImage;
+  final String role;
+  final bool isVerified;
+  final String bio;
+  final String rate;       // formatted, e.g. "$2500.00/hr"
+  final double rating;
+  final String specialty;  // defaults to 'General'
+  final bool isOnline;
+  final String language;   // joined from languages list, e.g. "English, Urdu"
 
   const InterpreterModel({
     required this.id,
     required this.name,
-    required this.language,
-    required this.specialty,
-    required this.rating,
-    required this.reviews,
-    required this.rate,
+    required this.email,
+    required this.phone,
     required this.profileImage,
+    required this.role,
+    required this.isVerified,
+    required this.bio,
+    required this.rate,
+    required this.rating,
+    required this.specialty,
+    required this.isOnline,
+    required this.language,
   });
 
   factory InterpreterModel.fromJson(Map<String, dynamic>? json) {
     if (json == null) {
       return const InterpreterModel(
-        id: '',
+        id: 0,
         name: 'Unknown Interpreter',
-        language: '',
-        specialty: '',
-        rating: 0,
-        reviews: 0,
-        rate: '',
+        email: '',
+        phone: '',
         profileImage: '',
+        role: '',
+        isVerified: false,
+        bio: '',
+        rate: '',
+        rating: 0.0,
+        specialty: 'General',
+        isOnline: false,
+        language: '',
       );
     }
 
-    final rateValue = _readString(
+    final rawRate = _readString(
       json,
-      const ['rate', 'hourlyRate', 'pricePerHour'],
+      const ['hourly_rate', 'hourlyRate', 'rate', 'pricePerHour'],
     );
 
     return InterpreterModel(
-      id: _readString(json, const ['id', '_id', 'interpreterId']),
-      name: _readString(json, const ['name', 'fullName', 'interpreterName'])
-          .trim()
-          .isEmpty
-          ? 'Unknown Interpreter'
-          : _readString(json, const ['name', 'fullName', 'interpreterName'])
-              .trim(),
-      language: _readLanguage(json),
-      specialty:
-          _readString(json, const ['specialty', 'speciality', 'category']),
-      rating: _readDouble(json, const ['rating', 'avgRating', 'averageRating']),
-      reviews: _readInt(json, const ['reviews', 'reviewCount', 'totalReviews']),
-      rate: rateValue.isEmpty ? '' : _formatRate(rateValue),
+      id: _readInt(json, const ['id', '_id']),
+      name: () {
+        final n = _readString(json, const ['name', 'fullName']).trim();
+        return n.isEmpty ? 'Unknown Interpreter' : n;
+      }(),
+      email: _readString(json, const ['email']),
+      phone: _readString(json, const ['phone']),
       profileImage: _readString(
         json,
-        const ['profileImage', 'profile_image', 'avatar', 'image', 'photo'],
+        const ['profile_image', 'profileImage', 'avatar', 'image'],
       ),
+      role: _readString(json, const ['role']),
+      isVerified: json['isVerified'] == true,
+      bio: _readString(json, const ['bio', 'description']),
+      rate: rawRate.isEmpty ? '' : _formatRate(rawRate),
+      rating: _readDouble(json, const ['rating', 'avgRating', 'averageRating']),
+      specialty: _readSpecialty(json),
+      isOnline: json['isOnline'] == true,
+      language: _readLanguage(json),
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'language': language,
-      'specialty': specialty,
-      'rating': rating,
-      'reviews': reviews,
-      'rate': rate,
-      'profileImage': profileImage,
-    };
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'email': email,
+        'phone': phone,
+        'profile_image': profileImage,
+        'role': role,
+        'isVerified': isVerified,
+        'bio': bio,
+        'hourly_rate': rate,
+        'rating': rating,
+        'specialty': specialty,
+        'isOnline': isOnline,
+        'language': language,
+      };
+
+  static String _readSpecialty(Map<String, dynamic> json) {
+    final s = _readString(json, const ['specialty', 'speciality', 'category']);
+    return s.isEmpty ? 'General' : s;
   }
 
   static String _readString(Map<String, dynamic> json, List<String> keys) {
@@ -82,7 +107,7 @@ class InterpreterModel {
     return '';
   }
 
-  static int _readInt(Map<String, dynamic> json, List<String> keys) {
+  static int _readInt(Map<String, dynamic> json, List<String> keys) {  // ignore: unused_element
     for (final key in keys) {
       final dynamic value = json[key];
       if (value == null) continue;
@@ -111,7 +136,7 @@ class InterpreterModel {
   }
 
   static String _readLanguage(Map<String, dynamic> json) {
-    final dynamic value = json['language'] ?? json['languages'];
+    final dynamic value = json['languages'] ?? json['language'];
 
     if (value is String) {
       return value;

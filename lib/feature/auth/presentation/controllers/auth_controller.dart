@@ -129,7 +129,7 @@ class AuthController extends GetxController {
     required String email,
     required String password,
     String phone = '',
-    List<String> preferredLanguages = const <String>['English'],
+    List<String> preferredLanguages = const <String>[],
     String gender = '',
     String dateOfBirth = '',
   }) async {
@@ -144,12 +144,15 @@ class AuthController extends GetxController {
 
     if (requiresExtendedSignupData) {
       payload['phone'] = _normalizePhone(phone);
-      payload['preferred_language'] = preferredLanguages
-          .map((e) => e.trim())
-          .where((e) => e.isNotEmpty)
-          .toList();
-      payload['gender'] = gender.trim().toLowerCase();
-      payload['dateOfBirth'] = dateOfBirth.trim();
+      // payload['gender'] = gender.trim().toLowerCase();
+      // payload['dateOfBirth'] = dateOfBirth.trim();
+
+      if (isClientRole) {
+        payload['preferred_language'] = preferredLanguages
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty)
+            .toList();
+      }
     }
 
     isLoading.value = true;
@@ -163,12 +166,31 @@ class AuthController extends GetxController {
         final response = await _dioClient.post(ApiConstants.register, data: payload);
         final signupResponse = SignupResponseModel.fromJson(response.data);
 
+        final raw = response.data;
+        final dataMap = raw is Map<String, dynamic>
+            ? (raw['data'] is Map<String, dynamic>
+                ? raw['data'] as Map<String, dynamic>
+                : const <String, dynamic>{})
+            : const <String, dynamic>{};
+        final signupToken = (dataMap['token'] ?? '').toString().trim();
+
         if (!signupResponse.success) {
         throw Exception(
           signupResponse.message.isEmpty
             ? 'Signup failed'
             : signupResponse.message,
         );
+        }
+
+        if (signupToken.isNotEmpty) {
+          authToken.value = signupToken;
+          await _sessionStorage.saveLoginSession(
+            token: signupToken,
+            loginTime: DateTime.now(),
+            role: normalizedRole,
+          );
+        } else {
+          authToken.value = '';
         }
 
         final message = signupResponse.message.isEmpty

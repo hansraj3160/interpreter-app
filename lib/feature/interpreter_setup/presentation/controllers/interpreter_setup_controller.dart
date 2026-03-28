@@ -162,7 +162,10 @@ class InterpreterSetupController extends GetxController {
       final response = await _dioClient.put(
         ApiConstants.updateInterpreterProfile,
         data: payload,
-        headers: {'Authorization': 'Bearer $token'},
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
       );
 
       final responseData = response.data;
@@ -200,10 +203,18 @@ class InterpreterSetupController extends GetxController {
 
   Future<String> _resolveToken() async {
     final storedToken = await _sessionStorage.getToken();
-    if (storedToken.isNotEmpty) return storedToken;
+    final storedRole = (await _sessionStorage.getUserRole()).toLowerCase();
+    if (storedToken.isNotEmpty && storedRole == 'interpreter') {
+      return storedToken;
+    }
 
     if (Get.isRegistered<AuthController>()) {
-      return Get.find<AuthController>().authToken.value;
+      final authController = Get.find<AuthController>();
+      final inMemoryToken = authController.authToken.value;
+      final activeRole = authController.role.toLowerCase();
+      if (inMemoryToken.isNotEmpty && activeRole == 'interpreter') {
+        return inMemoryToken;
+      }
     }
 
     return '';

@@ -18,11 +18,13 @@ class ClientHomeView extends StatelessWidget {
           Expanded(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.only(bottom: 20),
               child: Column(
                 children: [
+                  _buildWalletCard(context),
                   _buildSearchBar(context),
                   _buildCategories(context),
-                  _buildTopInterpreters(context),
+                  _buildInterpreterList(context),
                 ],
               ),
             ),
@@ -35,6 +37,7 @@ class ClientHomeView extends StatelessWidget {
   /// HEADER
   Widget _buildHeader(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
@@ -47,7 +50,7 @@ class ClientHomeView extends StatelessWidget {
               Text(
                 'Hello Client 👋',
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+                  color: colorScheme.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: 4),
@@ -59,10 +62,12 @@ class ClientHomeView extends StatelessWidget {
               ),
             ],
           ),
-          const CircleAvatar(
+          CircleAvatar(
             radius: 22,
-            backgroundImage: NetworkImage(
-              'https://ui-avatars.com/api/?name=Client&background=EBF4FF&color=1E88E5',
+            backgroundColor: colorScheme.primaryContainer,
+            child: Icon(
+              Icons.person_outline,
+              color: colorScheme.onPrimaryContainer,
             ),
           )
         ],
@@ -70,36 +75,83 @@ class ClientHomeView extends StatelessWidget {
     );
   }
 
+  Widget _buildWalletCard(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: colorScheme.primaryContainer,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Wallet Balance',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    r'$50.00',
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      color: colorScheme.onPrimaryContainer,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            FilledButton.tonal(
+              onPressed: () {},
+              style: FilledButton.styleFrom(
+                backgroundColor: colorScheme.surface,
+                foregroundColor: colorScheme.primary,
+              ),
+              child: const Text('Add Funds / Top-up'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   /// SEARCH BAR
   Widget _buildSearchBar(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-              color: theme.colorScheme.shadow.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            )
-          ],
+          border: Border.all(
+            color: colorScheme.outlineVariant,
+          ),
         ),
         child: TextField(
           onChanged: (val) => controller.searchQuery.value = val,
           decoration: InputDecoration(
-            hintText: "Search interpreters...",
+            hintText: 'Search interpreters...',
             hintStyle: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+              color: colorScheme.onSurfaceVariant,
             ),
-            icon: Icon(Icons.search, color: theme.colorScheme.onSurfaceVariant),
+            icon: Icon(Icons.search, color: colorScheme.onSurfaceVariant),
             suffixIcon: Icon(
               Icons.tune,
-              color: theme.colorScheme.primary,
+              color: colorScheme.primary,
             ),
             border: InputBorder.none,
           ),
@@ -111,6 +163,7 @@ class ClientHomeView extends StatelessWidget {
   /// LANGUAGE CHIPS
   Widget _buildCategories(BuildContext context) {
     final theme = Theme.of(context);
+    final allLanguages = ['All', ...controller.languages];
 
     return Padding(
       padding: const EdgeInsets.only(top: 24),
@@ -132,33 +185,38 @@ class ClientHomeView extends StatelessWidget {
           const SizedBox(height: 12),
           SizedBox(
             height: 38,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: controller.languages.length,
-              itemBuilder: (context, index) {
-                return Obx(() {
-                  final language = controller.languages[index];
-                  final isSelected =
-                      controller.selectedLanguage.value == language;
+            child: Obx(() {
+              final selectedLang = controller.selectedLanguage.value;
+              return ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: allLanguages.length,
+                itemBuilder: (context, index) {
+                  final language = allLanguages[index];
+                  final isSelected = language == 'All'
+                      ? selectedLang.isEmpty
+                      : selectedLang == language;
 
                   return LanguageFilterChip(
                     label: language,
                     isSelected: isSelected,
-                    onTap: () => controller.selectedLanguage.value = language,
+                    onTap: () {
+                      controller.selectedLanguage.value =
+                          language == 'All' ? '' : language;
+                    },
                   );
-                });
-              },
-            ),
+                },
+              );
+            }),
           ),
         ],
       ),
     );
   }
 
-  /// INTERPRETERS
-  Widget _buildTopInterpreters(BuildContext context) {
+  Widget _buildInterpreterList(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Padding(
       padding: const EdgeInsets.all(20),
@@ -175,34 +233,43 @@ class ClientHomeView extends StatelessWidget {
               ),
               TextButton(
                 onPressed: () {},
-                child: const Text("See All"),
+                child: const Text('See All'),
               )
             ],
           ),
           const SizedBox(height: 12),
           Obx(() {
-            if (controller.isLoadingInterpreters.value) {
+            // Eagerly read all observables so GetX tracks them as dependencies.
+            final isLoading = controller.isLoadingInterpreters.value;
+            final error = controller.errorMessage.value;
+            final query = controller.searchQuery.value.trim().toLowerCase();
+            final selectedLang = controller.selectedLanguage.value.trim().toLowerCase();
+            final allInterpreters = controller.interpretersList;
+
+            // 1. Loading with empty list → full-screen spinner
+            if (isLoading && allInterpreters.isEmpty) {
               return const Padding(
-                padding: EdgeInsets.symmetric(vertical: 20),
+                padding: EdgeInsets.symmetric(vertical: 40),
                 child: Center(child: CircularProgressIndicator()),
               );
             }
 
-            if (controller.interpretersError.value.isNotEmpty) {
+            // 2. Error state (only shown when list is also empty)
+            if (error != null && error.isNotEmpty && allInterpreters.isEmpty) {
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 20),
                 child: Column(
                   children: [
                     Text(
-                      controller.interpretersError.value,
+                      error,
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.error,
+                        color: colorScheme.error,
                       ),
                     ),
                     const SizedBox(height: 8),
                     TextButton(
-                      onPressed: controller.fetchInterpreters,
+                      onPressed: () => controller.fetchInterpreters(isRefresh: true),
                       child: const Text('Retry'),
                     ),
                   ],
@@ -210,28 +277,37 @@ class ClientHomeView extends StatelessWidget {
               );
             }
 
-            if (controller.topInterpreters.isEmpty) {
+            // 3. Client-side filter over the fetched list
+            final interpreters = allInterpreters.where((interpreter) {
+              final matchesLang = selectedLang.isEmpty ||
+                  interpreter.language.toLowerCase().contains(selectedLang);
+              final matchesQuery = query.isEmpty ||
+                  interpreter.name.toLowerCase().contains(query) ||
+                  interpreter.language.toLowerCase().contains(query) ||
+                  interpreter.specialty.toLowerCase().contains(query);
+              return matchesLang && matchesQuery;
+            }).toList();
+
+            // 4. Empty result
+            if (interpreters.isEmpty) {
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 20),
                 child: Text(
-                  'No interpreters available right now.',
+                  'No interpreters available.',
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                    color: colorScheme.onSurfaceVariant,
                   ),
                 ),
               );
             }
 
+            // 5. List
             return ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: controller.topInterpreters.length,
+              itemCount: interpreters.length,
               itemBuilder: (context, index) {
-                final interpreter = controller.topInterpreters[index];
-
-                return InterpreterCard(
-                  interpreter: interpreter,
-                );
+                return InterpreterCard(interpreter: interpreters[index]);
               },
             );
           }),

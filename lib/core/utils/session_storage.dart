@@ -28,6 +28,11 @@ class SessionStorage {
     return DateTime.tryParse(stored);
   }
 
+  Future<String> getUserRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_userRoleKey) ?? '';
+  }
+
   Future<void> clearSession() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);

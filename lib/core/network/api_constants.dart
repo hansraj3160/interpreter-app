@@ -14,6 +14,6 @@ class ApiConstants {
   static const String resetPassword = '/auth/reset-password';
   static const String updateInterpreterProfile = '/interpreter/update-profile';
   static const String uploadInterpreterDocs = '/interpreter/upload-docs';
-  static const String getProfile = '/users/profile';
-  static const String getInterpreters = '/get-interpreters';
+  static const String getProfile = '/auth/client/get-profile';
+  static const String getInterpreters = '/interpreter/list';
 }

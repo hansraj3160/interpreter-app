@@ -50,9 +50,17 @@ class DioClient {
   }
 
   // GET Request wrapper
-  Future<Response> get(String url, {Map<String, dynamic>? queryParameters}) async {
+  Future<Response> get(
+    String url, {
+    Map<String, dynamic>? queryParameters,
+    Map<String, dynamic>? headers,
+  }) async {
     try {
-      final response = await _dio.get(url, queryParameters: queryParameters);
+      final response = await _dio.get(
+        url,
+        queryParameters: queryParameters,
+        options: Options(headers: headers),
+      );
       return response;
     } on DioException catch (e) {
       throw _handleError(e);

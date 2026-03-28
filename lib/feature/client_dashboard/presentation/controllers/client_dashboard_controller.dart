@@ -12,16 +12,35 @@ class ClientDashboardController extends GetxController {
   // Bottom Navigation state
   final RxInt currentIndex = 0.obs;
 
-  // Search input state
+  // Search / filter state
   final RxString searchQuery = ''.obs;
   final RxString selectedLanguage = ''.obs;
+
+  // Pagination
+  final RxInt currentPage = 1.obs;
+  final RxInt totalPages = 1.obs;
+
+  // Loading / error state
   final RxBool isLoadingInterpreters = false.obs;
-  final RxString interpretersError = ''.obs;
+  final RxnString errorMessage = RxnString();
 
-  // Dummy list of languages for quick filters
-  final List<String> languages = ['Spanish', 'ASL (Sign)', 'French', 'Mandarin', 'Arabic', 'German'];
+  // Language filter chips (static labels for quick filters)
+  final List<String> languages = [
+    'Spanish',
+    'ASL (Sign)',
+    'French',
+    'Mandarin',
+    'Arabic',
+    'German',
+  ];
 
-  final RxList<InterpreterModel> topInterpreters = <InterpreterModel>[].obs;
+  // Interpreter list
+  final RxList<InterpreterModel> interpretersList = <InterpreterModel>[].obs;
+
+  // Backward-compatible aliases
+  RxBool get isLoading => isLoadingInterpreters;
+  RxList<InterpreterModel> get topInterpreters => interpretersList;
+  RxList<InterpreterModel> get topInterpretersList => interpretersList;
 
   @override
   void onInit() {
@@ -29,50 +48,57 @@ class ClientDashboardController extends GetxController {
     fetchInterpreters();
   }
 
-  Future<void> fetchInterpreters() async {
+  Future<void> fetchInterpreters({bool isRefresh = false}) async {
+    if (isRefresh) {
+      currentPage.value = 1;
+      interpretersList.clear();
+    }
+
     try {
       isLoadingInterpreters.value = true;
-      interpretersError.value = '';
+      errorMessage.value = null;
 
-      final response = await _dioClient.get(ApiConstants.getInterpreters);
-      final listData = _extractInterpreterList(response.data);
+      final queryParams = <String, dynamic>{
+        'page': currentPage.value,
+        'limit': 10,
+        'isOnline': false,
+      };
 
-      topInterpreters.assignAll(
-        listData.map((item) => InterpreterModel.fromJson(item)).toList(),
+      if (selectedLanguage.value.isNotEmpty) {
+        queryParams['language'] = selectedLanguage.value;
+      }
+
+      final response = await _dioClient.get(
+        ApiConstants.getInterpreters,
+        queryParameters: queryParams,
       );
+
+      final outerData = response.data['data'];
+      if (outerData is Map<String, dynamic>) {
+        totalPages.value =
+            (outerData['totalPages'] as num?)?.toInt() ?? 1;
+        currentPage.value =
+            (outerData['currentPage'] as num?)?.toInt() ?? 1;
+
+        final rawList = outerData['data'];
+        final items = rawList is List
+            ? rawList.whereType<Map<String, dynamic>>().toList()
+            : <Map<String, dynamic>>[];
+
+        interpretersList.assignAll(
+          items.map(InterpreterModel.fromJson).toList(),
+        );
+      }
     } catch (e) {
-      interpretersError.value = e.toString();
-      topInterpreters.clear();
+      errorMessage.value = e.toString();
+      Get.snackbar(
+        'Error',
+        'Failed to fetch interpreters. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     } finally {
       isLoadingInterpreters.value = false;
     }
-  }
-
-  List<Map<String, dynamic>> _extractInterpreterList(dynamic responseData) {
-    if (responseData is List) {
-      return responseData.whereType<Map<String, dynamic>>().toList();
-    }
-
-    if (responseData is! Map<String, dynamic>) {
-      return const [];
-    }
-
-    const listKeys = ['data', 'interpreters', 'results', 'items'];
-    for (final key in listKeys) {
-      final dynamic value = responseData[key];
-      if (value is List) {
-        return value.whereType<Map<String, dynamic>>().toList();
-      }
-
-      if (value is Map<String, dynamic>) {
-        final nestedList = value['interpreters'] ?? value['items'];
-        if (nestedList is List) {
-          return nestedList.whereType<Map<String, dynamic>>().toList();
-        }
-      }
-    }
-
-    return const [];
   }
 
   void changeTabIndex(int index) {
